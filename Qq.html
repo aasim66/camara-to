@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Canvas with Finger Drawing</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    video, canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    canvas {
+      z-index: 1;
+      touch-action: none;
+    }
+
+    #cameraLabel {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      z-index: 2;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 18px;
+      font-family: sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 📷 Label -->
+  <div id="cameraLabel">📷 before</div>
+
+  <!-- Camera video background -->
+  <video id="camera" autoplay playsinline muted></video>
+
+  <!-- Drawing canvas -->
+  <canvas id="drawCanvas"></canvas>
+
+  <script>
+    // Start camera stream
+    const video = document.getElementById('camera');
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => { video.srcObject = stream; })
+      .catch(err => { alert("Camera access denied!"); console.error(err); });
+
+    const canvas = document.getElementById('drawCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Resize canvas to fit screen
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    let drawing = false;
+
+    // Get touch or mouse position
+    function getPos(e) {
+      if (e.touches) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      } else {
+        return { x: e.clientX, y: e.clientY };
+      }
+    }
+
+    function startDraw(e) {
+      drawing = true;
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+      e.preventDefault();
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+      const pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.strokeStyle = 'red';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      e.preventDefault();
+    }
+
+    function stopDraw() {
+      drawing = false;
+      ctx.closePath();
+    }
+
+    // Touch events
+    canvas.addEventListener('touchstart', startDraw, false);
+    canvas.addEventListener('touchmove', draw, false);
+    canvas.addEventListener('touchend', stopDraw, false);
+
+    // Mouse events
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('mouseout', stopDraw);
+  </script>
+</body>
+</html>
